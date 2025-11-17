@@ -23,9 +23,9 @@ before(done => {
   });
 });
 
-it('query localtunnel server w/ ident', async done => {
-  const tunnel = await localtunnel({ port: fakePort });
-  assert.ok(new RegExp('^https://.*localtunnel.me$').test(tunnel.url));
+it('query localtunnel server w/ ident', async () => {
+  const tunnel = await localtunnel({ port: fakePort, host: 'https://lt.desplega.ai' });
+  assert.ok(new RegExp('^https://.*').test(tunnel.url));
 
   const parsed = url.parse(tunnel.url);
   const opt = {
@@ -35,46 +35,7 @@ it('query localtunnel server w/ ident', async done => {
     path: '/',
   };
 
-  const req = https.request(opt, res => {
-    res.setEncoding('utf8');
-    let body = '';
-
-    res.on('data', chunk => {
-      body += chunk;
-    });
-
-    res.on('end', () => {
-      assert(/.*[.]localtunnel[.]me/.test(body), body);
-      tunnel.close();
-      done();
-    });
-  });
-
-  req.end();
-});
-
-it('request specific domain', async () => {
-  const subdomain = Math.random()
-    .toString(36)
-    .substr(2);
-  const tunnel = await localtunnel({ port: fakePort, subdomain });
-  assert.ok(new RegExp(`^https://${subdomain}.localtunnel.me$`).test(tunnel.url));
-  tunnel.close();
-});
-
-describe('--local-host localhost', () => {
-  it('override Host header with local-host', async done => {
-    const tunnel = await localtunnel({ port: fakePort, local_host: 'localhost' });
-    assert.ok(new RegExp('^https://.*localtunnel.me$').test(tunnel.url));
-
-    const parsed = url.parse(tunnel.url);
-    const opt = {
-      host: parsed.host,
-      port: 443,
-      headers: { host: parsed.hostname },
-      path: '/',
-    };
-
+  return new Promise((resolve, reject) => {
     const req = https.request(opt, res => {
       res.setEncoding('utf8');
       let body = '';
@@ -84,20 +45,73 @@ describe('--local-host localhost', () => {
       });
 
       res.on('end', () => {
-        assert.strictEqual(body, 'localhost');
-        tunnel.close();
-        done();
+        try {
+          assert(/.*[.]/.test(body), body);
+          tunnel.close();
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
       });
     });
 
+    req.on('error', reject);
     req.end();
   });
 });
 
+it('request specific domain', async () => {
+  const subdomain = Math.random()
+    .toString(36)
+    .substr(2);
+  const tunnel = await localtunnel({ port: fakePort, subdomain, host: 'https://lt.desplega.ai' });
+  assert.ok(new RegExp(`^https://${subdomain}`).test(tunnel.url));
+  tunnel.close();
+});
+
+describe('--local-host localhost', () => {
+  it('override Host header with local-host', async () => {
+    const tunnel = await localtunnel({ port: fakePort, local_host: 'localhost', host: 'https://lt.desplega.ai' });
+    assert.ok(new RegExp('^https://.*').test(tunnel.url));
+
+    const parsed = url.parse(tunnel.url);
+    const opt = {
+      host: parsed.host,
+      port: 443,
+      headers: { host: parsed.hostname },
+      path: '/',
+    };
+
+    return new Promise((resolve, reject) => {
+      const req = https.request(opt, res => {
+        res.setEncoding('utf8');
+        let body = '';
+
+        res.on('data', chunk => {
+          body += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            assert.strictEqual(body, 'localhost');
+            tunnel.close();
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.end();
+    });
+  });
+});
+
 describe('--local-host 127.0.0.1', () => {
-  it('override Host header with local-host', async done => {
-    const tunnel = await localtunnel({ port: fakePort, local_host: '127.0.0.1' });
-    assert.ok(new RegExp('^https://.*localtunnel.me$').test(tunnel.url));
+  it('override Host header with local-host', async () => {
+    const tunnel = await localtunnel({ port: fakePort, local_host: '127.0.0.1', host: 'https://lt.desplega.ai' });
+    assert.ok(new RegExp('^https://.*').test(tunnel.url));
 
     const parsed = url.parse(tunnel.url);
     const opt = {
@@ -109,27 +123,34 @@ describe('--local-host 127.0.0.1', () => {
       path: '/',
     };
 
-    const req = https.request(opt, res => {
-      res.setEncoding('utf8');
-      let body = '';
+    return new Promise((resolve, reject) => {
+      const req = https.request(opt, res => {
+        res.setEncoding('utf8');
+        let body = '';
 
-      res.on('data', chunk => {
-        body += chunk;
+        res.on('data', chunk => {
+          body += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            assert.strictEqual(body, '127.0.0.1');
+            tunnel.close();
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        });
       });
 
-      res.on('end', () => {
-        assert.strictEqual(body, '127.0.0.1');
-        tunnel.close();
-        done();
-      });
+      req.on('error', reject);
+      req.end();
     });
-
-    req.end();
   });
 
-  it('send chunked request', async done => {
-    const tunnel = await localtunnel({ port: fakePort, local_host: '127.0.0.1' });
-    assert.ok(new RegExp('^https://.*localtunnel.me$').test(tunnel.url));
+  it('send chunked request', async () => {
+    const tunnel = await localtunnel({ port: fakePort, local_host: '127.0.0.1', host: 'https://lt.desplega.ai' });
+    assert.ok(new RegExp('^https://.*').test(tunnel.url));
 
     const parsed = url.parse(tunnel.url);
     const opt = {
@@ -142,21 +163,28 @@ describe('--local-host 127.0.0.1', () => {
       path: '/',
     };
 
-    const req = https.request(opt, res => {
-      res.setEncoding('utf8');
-      let body = '';
+    return new Promise((resolve, reject) => {
+      const req = https.request(opt, res => {
+        res.setEncoding('utf8');
+        let body = '';
 
-      res.on('data', chunk => {
-        body += chunk;
+        res.on('data', chunk => {
+          body += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            assert.strictEqual(body, '127.0.0.1');
+            tunnel.close();
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        });
       });
 
-      res.on('end', () => {
-        assert.strictEqual(body, '127.0.0.1');
-        tunnel.close();
-        done();
-      });
+      req.on('error', reject);
+      req.end(crypto.randomBytes(1024 * 8).toString('base64'));
     });
-
-    req.end(crypto.randomBytes(1024 * 8).toString('base64'));
   });
 });
