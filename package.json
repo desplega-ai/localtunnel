@@ -1,7 +1,7 @@
 {
   "name": "@desplega.ai/localtunnel",
-  "description": "Expose localhost to the world",
-  "version": "2.1.0",
+  "description": "Expose localhost to the world (desplega.ai fork)",
+  "version": "2.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -11,14 +11,15 @@
   "contributors": [
     "Roman Shtylman <shtylman@gmail.com>",
     "Gert Hengeveld <gert@hichroma.com>",
-    "Tom Coleman <tom@hichroma.com>"
+    "Tom Coleman <tom@hichroma.com>",
+    "Taras Yarema <t@desplega.ai>"
   ],
   "main": "./localtunnel.js",
   "bin": {
     "lt": "bin/lt.js"
   },
   "scripts": {
-    "test": "mocha --reporter spec --timeout 60000 -p -c -- *.spec.js"
+    "test": "bun test"
   },
   "dependencies": {
     "axios": "0.21.4",
@@ -26,10 +27,11 @@
     "openurl": "1.1.1",
     "yargs": "17.1.1"
   },
-  "devDependencies": {
-    "mocha": "~9.1.1"
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=8.3.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

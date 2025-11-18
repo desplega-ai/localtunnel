@@ -7,40 +7,46 @@ Great for working with browser testing tools like browserling or external api ca
 ## Quickstart
 
 ```
-npx localtunnel --port 8000
+npx @desplega.ai/localtunnel --port 8000
 ```
 
 ## Installation
 
-### Globally
+### Using npx/bunx (Recommended)
 
+```bash
+npx @desplega.ai/localtunnel --port 8000
 ```
-npm install -g localtunnel
+
+Or with bun:
+
+```bash
+bunx @desplega.ai/localtunnel --port 8000
 ```
 
 ### As a dependency in your project
 
-```
-yarn add localtunnel
+```bash
+npm install @desplega.ai/localtunnel
 ```
 
-### Homebrew
+or
 
 ```bash
-brew install localtunnel
+yarn add @desplega.ai/localtunnel
 ```
 
 ## CLI usage
 
-When localtunnel is installed globally, just use the `lt` command to start the tunnel.
+Use `npx`, `bunx`, or install as a project dependency to run the localtunnel CLI.
 
+```bash
+npx @desplega.ai/localtunnel --port 8000
 ```
-lt --port 8000
-```
 
-Thats it! It will connect to the tunnel server, setup the tunnel, and tell you what url to use for your testing. This url will remain active for the duration of your session; so feel free to share it with others for happy fun time!
+That's it! It will connect to the tunnel server, setup the tunnel, and tell you what url to use for your testing. This url will remain active for the duration of your session; so feel free to share it with others for happy fun time!
 
-You can restart your local server all you want, `lt` is smart enough to detect this and reconnect once it is back.
+You can restart your local server all you want, `localtunnel` is smart enough to detect this and reconnect once it is back.
 
 ### Arguments
 
@@ -48,11 +54,19 @@ Below are some common arguments. See `lt --help` for additional arguments
 
 - `--subdomain` request a named subdomain on the localtunnel server (default is random characters)
 - `--local-host` proxy to a hostname other than localhost
+- `--auth` protect tunnel with authentication. Use `--auth` alone to have the server generate a random password, or `--auth <password>` to specify a custom password. Username will be `hi`.
 
 You may also specify arguments via env variables. E.x.
 
 ```
 PORT=3000 lt
+```
+
+Examples:
+
+```bash
+npx @desplega.ai/localtunnel --port 3000 --auth                          # server generates random password
+npx @desplega.ai/localtunnel --port 3000 --auth mysecretpassword         # use custom password
 ```
 
 ## API
@@ -64,13 +78,13 @@ The localtunnel client is also usable through an API (for test integration, auto
 Creates a new localtunnel to the specified local `port`. Will return a Promise that resolves once you have been assigned a public localtunnel url. `options` can be used to request a specific `subdomain`. A `callback` function can be passed, in which case it won't return a Promise. This exists for backwards compatibility with the old Node-style callback API. You may also pass a single options object with `port` as a property.
 
 ```js
-const localtunnel = require("localtunnel");
+const localtunnel = require("@desplega.ai/localtunnel");
 
 (async () => {
   const tunnel = await localtunnel({ port: 3000 });
 
   // the assigned public url for your tunnel
-  // i.e. https://abcdefgjhij.localtunnel.me
+  // i.e. https://abcdefgjhij.lt.desplega.ai
   tunnel.url;
 
   tunnel.on("close", () => {
@@ -83,7 +97,8 @@ const localtunnel = require("localtunnel");
 
 - `port` (number) [required] The local port number to expose through localtunnel.
 - `subdomain` (string) Request a specific subdomain on the proxy server. **Note** You may not actually receive this name depending on availability.
-- `host` (string) URL for the upstream proxy server. Defaults to `https://localtunnel.me`.
+- `host` (string) URL for the upstream proxy server. Defaults to `https://lt.desplega.ai`.
+- `auth` (boolean | string) Enable authentication for the tunnel. Pass `true` to have the server generate a random password, or pass a string to use as a custom password. Username will be `hi`.
 - `local_host` (string) Proxy to this hostname instead of `localhost`. This will also cause the `Host` header to be re-written to this value in proxied requests.
 - `local_https` (boolean) Enable tunneling to local HTTPS server.
 - `local_cert` (string) Path to certificate PEM file for local HTTPS server.
@@ -109,21 +124,9 @@ The `tunnel` instance has the following methods
 | ------ | ---- | ---------------- |
 | close  |      | close the tunnel |
 
-## other clients
-
-Clients in other languages
-
-_go_ [gotunnelme](https://github.com/NoahShen/gotunnelme)
-
-_go_ [go-localtunnel](https://github.com/localtunnel/go-localtunnel)
-
-_C#/.NET_ [localtunnel-client](https://github.com/angelobreuer/localtunnel.net)
-
-_Rust_ [rlt](https://github.com/kaichaosun/rlt)
-
 ## server
 
-See [localtunnel/server](//github.com/localtunnel/server) for details on the server that powers localtunnel.
+See [desplega-ai/localtunnel-server](https://github.com/desplega-ai/localtunnel-server) for details on the server that powers localtunnel.
 
 ## License
 
