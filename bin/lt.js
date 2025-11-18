@@ -17,7 +17,7 @@ const { argv } = yargs
   .option('h', {
     alias: 'host',
     describe: 'Upstream server providing forwarding',
-    default: 'https://localtunnel.me',
+    default: 'https://lt.desplega.ai',
   })
   .option('s', {
     alias: 'subdomain',
