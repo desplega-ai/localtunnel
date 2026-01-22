@@ -30,7 +30,7 @@ describe("localtunnel client", () => {
     expect(tunnel.url).toBeDefined();
     expect(tunnel.url).toMatch(/^https:\/\/.+\.lt\.desplega\.ai/);
 
-    tunnel.close();
+    await tunnel.close();
   });
 
   it("should create a tunnel with a specific subdomain", async () => {
@@ -42,7 +42,7 @@ describe("localtunnel client", () => {
     });
 
     expect(tunnel.url).toMatch(new RegExp(`^https://${subdomain}`));
-    tunnel.close();
+    await tunnel.close();
   });
 
   it("should accept auth flag for server-generated password", async () => {
@@ -55,7 +55,7 @@ describe("localtunnel client", () => {
     // Should successfully create tunnel with auth
     expect(tunnel.url).toBeDefined();
     expect(tunnel.url).toMatch(/^https:\/\/.+\.lt\.desplega\.ai/);
-    tunnel.close();
+    await tunnel.close();
   });
 
   it("should accept custom password", async () => {
@@ -69,7 +69,7 @@ describe("localtunnel client", () => {
     // Should successfully create tunnel with custom password
     expect(tunnel.url).toBeDefined();
     expect(tunnel.url).toMatch(/^https:\/\/.+\.lt\.desplega\.ai/);
-    tunnel.close();
+    await tunnel.close();
   });
 
   it("should emit close event", async () => {
@@ -83,10 +83,8 @@ describe("localtunnel client", () => {
       closedEmitted = true;
     });
 
-    tunnel.close();
+    await tunnel.close();
 
-    // Give it a moment to emit the event
-    await new Promise((resolve) => setTimeout(resolve, 100));
     expect(closedEmitted).toBe(true);
   });
 
@@ -98,6 +96,72 @@ describe("localtunnel client", () => {
     });
 
     expect(tunnel.url).toBeDefined();
-    tunnel.close();
+    await tunnel.close();
+  });
+
+  it("close() should return a Promise", async () => {
+    const tunnel = await localtunnel({
+      port: fakePort,
+      host: "https://lt.desplega.ai",
+    });
+
+    const result = tunnel.close();
+    expect(result).toBeInstanceOf(Promise);
+    await result;
+  });
+
+  it("should handle multiple close() calls gracefully", async () => {
+    const tunnel = await localtunnel({
+      port: fakePort,
+      host: "https://lt.desplega.ai",
+    });
+
+    await tunnel.close();
+    await tunnel.close(); // Should not throw
+    await tunnel.close(); // Should not throw
+  });
+
+  it("should cleanup tunnelCluster on close", async () => {
+    const tunnel = await localtunnel({
+      port: fakePort,
+      host: "https://lt.desplega.ai",
+    });
+
+    expect(tunnel.tunnelCluster).toBeDefined();
+    await tunnel.close();
+    expect(tunnel.tunnelCluster).toBeNull();
+  });
+
+  it("should fail immediately with error message on 409 subdomain conflict", async () => {
+    // Create a mock server that returns 409 Conflict
+    const mockServer = http.createServer((req, res) => {
+      res.writeHead(409, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        message: "Subdomain 'test' is already in use. Try again in a few seconds or use a different subdomain."
+      }));
+    });
+
+    const mockPort = await new Promise<number>((resolve) => {
+      mockServer.listen(0, () => {
+        const addr = mockServer.address();
+        if (addr && typeof addr === "object") {
+          resolve(addr.port);
+        }
+      });
+    });
+
+    try {
+      await localtunnel({
+        port: fakePort,
+        subdomain: "test",
+        host: `http://localhost:${mockPort}`,
+      });
+      // Should not reach here
+      expect(true).toBe(false);
+    } catch (err: any) {
+      expect(err.message).toContain("Subdomain 'test' is already in use");
+    } finally {
+      mockServer.close();
+    }
   });
 });

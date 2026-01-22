@@ -81,6 +81,22 @@ if (typeof argv.port !== 'number') {
     throw err;
   });
 
+  // Graceful shutdown handler
+  const shutdown = async signal => {
+    console.log(`\nReceived ${signal}, closing tunnel...`);
+    try {
+      await tunnel.close();
+      console.log('Tunnel closed gracefully');
+      process.exit(0);
+    } catch (err) {
+      console.error('Error closing tunnel:', err.message);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+
   tunnel.on('error', err => {
     throw err;
   });
